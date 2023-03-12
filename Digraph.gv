@@ -1,0 +1,20 @@
+// Red-Black Tree Visualization
+digraph {
+	140308175651456 [label="key=2,value=bar" color=black]
+	140308175651456 -> 140308178120816
+	140308178120816 [label="key=1,value=bar" color=black]
+	140308178120816 -> 140308175651360
+	140308175651360 [label="key=None,value=None" color=nil]
+	140308178120816 -> 140308175651360
+	140308175651360 [label="key=None,value=None" color=nil]
+	140308175651456 -> 140308175592896
+	140308175592896 [label="key=3,value=bar" color=black]
+	140308175592896 -> 140308175651360
+	140308175651360 [label="key=None,value=None" color=nil]
+	140308175592896 -> 140308175651600
+	140308175651600 [label="key=5,value=bar" color=red]
+	140308175651600 -> 140308175651360
+	140308175651360 [label="key=None,value=None" color=nil]
+	140308175651600 -> 140308175651360
+	140308175651360 [label="key=None,value=None" color=nil]
+}
