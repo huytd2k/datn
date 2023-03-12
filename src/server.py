@@ -77,7 +77,7 @@ class MyTCPRequestHandler(socketserver.StreamRequestHandler):
 @click.option("--port", "-p", default=8080)
 @click.command()
 def start_server(address: str, port: int):
-    db_server = socketserver.TCPServer((address, port), MyTCPRequestHandler)
+    db_server = socketserver.ThreadingTCPServer((address, port), MyTCPRequestHandler)
     print("Starting DB Server")
     try:
         db_server.serve_forever()
