@@ -21,16 +21,20 @@ def repl(address: str, port: int):
             if command.lower() == "get":
                 value = client.get(args[0])
                 print(f"{args[0]}={value}")
-                continue
-            if command.lower() == "set":
-                msg = client.set(args[0], args[1])
-                print(msg)
-                continue
-            if command.lower() == "ping":
+            elif command.lower() == "diskusage":
+                value = client.disk_usage()
+                print(value)
+            elif command.lower() == "set":
+                if len(args) != 2:
+                    print("Invalid args", args)
+                else:
+                    msg = client.set(args[0], args[1])
+                    print(msg)
+            elif command.lower() == "ping":
                 response = client.ping()
                 print(response)
-                continue
-            print(f"Unknown command {command}!")
+            else:
+                print(f"Unknown command {command}!")
         except DbException as dbe:
             print(str(dbe))
         

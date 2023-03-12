@@ -36,6 +36,11 @@ class LSMDbClient:
         msg = self.client_socket.recv(1024).decode()
         return msg
 
+    def disk_usage(self):
+        self.client_socket.sendall("DISKUSAGE\n".encode())
+        msg = self.client_socket.recv(1024).decode()
+        return msg
+
     def ping(self):
         self.client_socket.sendall("PING\n".encode())
         msg = self.client_socket.recv(1024).decode()
