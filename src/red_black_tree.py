@@ -525,6 +525,9 @@ class RedBlackTree:
         return inner_find(self.root)
 
     def find_node(self, key):
+        if key is None:
+            return None
+
         def inner_find(root):
             if root is None or root == self.NIL_LEAF:
                 return None

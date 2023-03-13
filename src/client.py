@@ -46,6 +46,16 @@ class LSMDbClient:
         msg = self.client_socket.recv(1024).decode()
         return msg
 
+    def compact(self):
+        self.client_socket.sendall("COMPACT\n".encode())
+        msg = self.client_socket.recv(1024).decode()
+        return msg
+
+    def flush(self):
+        self.client_socket.sendall("flush\n".encode())
+        msg = self.client_socket.recv(1024).decode()
+        return msg
+
 
 @click.group()
 def client():

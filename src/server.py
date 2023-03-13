@@ -8,13 +8,14 @@ file_directory = sys.path[0]
 path = file_directory + '/segments/'
 engine = LSMTree('test_file-1', path, 'bkup')
 
-
-def get_folder_size(folder_path):
+def get_folder_size(folder_path, exclude):
     total_size = 0
     try:
         # Iterate through all files in the directory
         for dirpath, dirnames, filenames in os.walk(folder_path):
             for file in filenames:
+                if file == exclude:
+                    continue
                 # Get the path of the file
                 filepath = os.path.join(dirpath, file)
                 # Get the file size and add it to the total size
@@ -39,14 +40,14 @@ def get_folder_size(folder_path):
 class MyTCPRequestHandler(socketserver.StreamRequestHandler):
     def handle(self):
         while True:
-            print("Recieved one request from {}".format(self.client_address[0]))
+            # print("Recieved one request from {}".format(self.client_address[0]))
             msg = self.rfile.readline().strip().decode()
             if not msg:
                 break
 
             command, *args = msg.split(" ")
             if command.lower() == "diskusage":
-                size = get_folder_size(engine.segments_directory)
+                size = get_folder_size(engine.segments_directory, engine.wal_basename)
                 self.wfile.write(size.encode())
             elif command.lower() == "getall":
                 result = []
@@ -69,14 +70,28 @@ class MyTCPRequestHandler(socketserver.StreamRequestHandler):
                 self.wfile.write(f"Wrote {key}={value}".encode())
             elif command.lower() == "ping":
                 self.wfile.write("Pong!".encode())
+            elif command.lower() == "flush":
+                try:
+                    engine.flush_memtable_to_disk(engine.current_segment_path())
+                    self.wfile.write("Done flushing".encode())
+                except Exception as e:
+                    self.wfile.write(f"Error while flushing {str(e)}".encode())
+            elif command.lower() == "compact":
+                try:
+                    engine.compact()
+                    self.wfile.write("Done compacting".encode())
+                except Exception as e:
+                    self.wfile.write(f"Error while compacting {str(e)}".encode())
             else:
                 self.wfile.write(f"Unknown command".encode())
 
 
 @click.option("--address", "-a", default="127.0.0.1")
 @click.option("--port", "-p", default=8080)
+@click.option("--memtable-threshold", "-t", default=3000)
 @click.command()
-def start_server(address: str, port: int):
+def start_server(address: str, port: int, memtable_threshold):
+    engine.set_threshold(memtable_threshold)
     db_server = socketserver.ThreadingTCPServer((address, port), MyTCPRequestHandler)
     print("Starting DB Server")
     try:

@@ -1,9 +1,16 @@
 from pathlib import Path
+import logging
 from os import remove as remove_file, rename as rename_file
 from red_black_tree import RedBlackTree
 from append_log import AppendLog
 from bloom_filter import BloomFilter
 import pickle
+import threading
+
+
+logger = logging.getLogger(__name__)
+lock = threading.Lock()
+
 
 class LSMTree():
     def __init__(self, segment_basename, segments_directory, wal_basename):
@@ -56,25 +63,26 @@ class LSMTree():
 
         # Check if new segment needed
         additional_size = len(key) + len(value)
-        if self.memtable.total_bytes + additional_size > self.threshold:
-            self.compact()
-            self.flush_memtable_to_disk(self.current_segment_path())
+        with lock:
+            if self.memtable.total_bytes + additional_size > self.threshold:
+                    self.compact()
+                    self.flush_memtable_to_disk(self.current_segment_path())
 
-            # Update bookkeeping metadata
-            self.memtable = RedBlackTree()
-            self.memtable_wal().clear()
+                    # Update bookkeeping metadata
+                    self.memtable = RedBlackTree()
+                    self.memtable_wal().clear()
 
-            self.segments.append(self.current_segment)
-            new_seg_name = self.incremented_segment_name()
-            self.current_segment = new_seg_name
-            self.memtable.total_bytes = 0
+                    self.segments.append(self.current_segment)
+                    new_seg_name = self.incremented_segment_name()
+                    self.current_segment = new_seg_name
+                    self.memtable.total_bytes = 0
 
-        # Write to memtable write ahead log in case of crash
-        self.memtable_wal().write(log)
+            # Write to memtable write ahead log in case of crash
+            self.memtable_wal().write(log)
 
-        # Write to memtable
-        self.memtable.add(key, value)
-        self.memtable.total_bytes += additional_size
+            # Write to memtable
+            self.memtable.add(key, value)
+            self.memtable.total_bytes += additional_size
 
     def db_get(self, key):
         ''' (self, str) -> None
@@ -213,6 +221,7 @@ class LSMTree():
 
         Updates the index and adds keys to the bloom filter.
         '''
+        print("Flushing memtable to disk")
         sparsity_counter = self.sparsity()
 
         # We track the offset for each key ourself, instead of checking the file's size as we
@@ -262,6 +271,7 @@ class LSMTree():
         Note: this will parse every segment in self.segments. It is intended to be
         used BEFORE flushing the memtable to disk.
         '''
+        logger.info("Compacting segments...")
         memtable_nodes = self.memtable.in_order()
 
         keys_on_disk = []
